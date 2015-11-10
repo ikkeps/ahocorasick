@@ -11,7 +11,7 @@ import (
 )
 
 import (
-	"github.com/anknown/ahocorasick"
+	"github.com/ikkeps/ahocorasick"
 	"github.com/cloudflare/ahocorasick"
 )
 
