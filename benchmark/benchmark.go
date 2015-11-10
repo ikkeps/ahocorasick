@@ -151,7 +151,7 @@ func TestBEnglish() {
 		return
 	}
 
-	contentRune := bytes.Runes([]byte(content))
+	contentRune := string(content)
 	end := time.Now()
 	fmt.Printf("load file cost:%d(ms)\n", (end.UnixNano()-start.UnixNano())/(1000*1000))
 
@@ -190,7 +190,7 @@ func TestBChinese() {
 		return
 	}
 
-	contentRune := bytes.Runes([]byte(content))
+	contentRune := string(content)
 	end := time.Now()
 	fmt.Printf("load file cost:%d(ms)\n", (end.UnixNano()-start.UnixNano())/(1000*1000))
 

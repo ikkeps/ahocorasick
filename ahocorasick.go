@@ -6,6 +6,7 @@ import (
 
 import (
 	"github.com/anknown/godarts"
+	"unicode/utf8"
 )
 
 const FAIL_STATE = -1
@@ -14,12 +15,12 @@ const ROOT_STATE = 1
 type Machine struct {
 	trie    *godarts.DoubleArrayTrie
 	failure []int
-	output  map[int]([][]rune)
+	output  map[int]([]string)
 }
 
 type Term struct {
-	Pos  int
-	Word []rune
+	Pos int
+	Word string
 }
 
 func (m *Machine) Build(keywords [][]rune) (err error) {
@@ -35,9 +36,9 @@ func (m *Machine) Build(keywords [][]rune) (err error) {
 		return err
 	}
 
-	m.output = make(map[int]([][]rune), 0)
+	m.output = make(map[int]([]string), 0)
 	for idx, val := range d.Output {
-		m.output[idx] = append(m.output[idx], val)
+		m.output[idx] = append(m.output[idx], string(val))
 	}
 
 	queue := make([](*godarts.LinkedListTrieNode), 0)
@@ -131,7 +132,7 @@ func (m *Machine) setF(inState, outState int) {
 	m.failure[inState] = outState
 }
 
-func (m *Machine) MultiPatternSearch(content []rune, returnImmediately bool) [](*Term) {
+func (m *Machine) MultiPatternSearch(content string, returnImmediately bool) [](*Term) {
 	terms := make([](*Term), 0)
 
 	state := ROOT_STATE
@@ -145,7 +146,7 @@ func (m *Machine) MultiPatternSearch(content []rune, returnImmediately bool) [](
 			if val, ok := m.output[state]; ok != false {
 				for _, word := range val {
 					term := new(Term)
-					term.Pos = pos - len(word) + 1
+					term.Pos = pos + utf8.RuneLen(c) - len(word)
 					term.Word = word
 					terms = append(terms, term)
 					if returnImmediately {
@@ -157,15 +158,4 @@ func (m *Machine) MultiPatternSearch(content []rune, returnImmediately bool) [](
 	}
 
 	return terms
-}
-
-func (m *Machine) ExactSearch(content []rune) [](*Term) {
-	if m.trie.ExactMatchSearch(content, 0) {
-		t := new(Term)
-		t.Word = content
-		t.Pos = 0
-		return [](*Term){t}
-	}
-
-	return nil
 }
