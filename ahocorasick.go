@@ -15,11 +15,11 @@ const ROOT_STATE = 1
 type Machine struct {
 	trie    *godarts.DoubleArrayTrie
 	failure []int
-	output  map[int]([]string)
+	output  [][]string // slice for speed
 }
 
 type Term struct {
-	Pos int
+	Pos  int
 	Word string
 }
 
@@ -36,9 +36,9 @@ func (m *Machine) Build(keywords [][]rune) (err error) {
 		return err
 	}
 
-	m.output = make(map[int]([]string), 0)
+	output := make(map[int]([]string), 0)
 	for idx, val := range d.Output {
-		m.output[idx] = append(m.output[idx], string(val))
+		output[idx] = append(output[idx], string(val))
 	}
 
 	queue := make([](*godarts.LinkedListTrieNode), 0)
@@ -65,8 +65,8 @@ func (m *Machine) Build(keywords [][]rune) (err error) {
 				inState = m.f(inState)
 				goto set_state
 			}
-			if _, ok := m.output[outState]; ok != false {
-				m.output[n.Base] = append(m.output[outState], m.output[n.Base]...)
+			if _, ok := output[outState]; ok != false {
+				output[n.Base] = append(output[outState], output[n.Base]...)
 			}
 			m.setF(n.Base, outState)
 		}
@@ -74,39 +74,26 @@ func (m *Machine) Build(keywords [][]rune) (err error) {
 		queue = queue[1:]
 	}
 
+	// converting output to slice for speed
+	maxOut := 0
+	for key := range output{
+
+		if key > maxOut{
+			maxOut = key
+		}
+	}
+	m.output = make([][]string, maxOut+1)
+	for key, val := range output{
+		m.output[key] = val
+	}
+
 	return nil
 }
 
-func (m *Machine) PrintFailure() {
-	fmt.Printf("+-----+-----+\n")
-	fmt.Printf("|%5s|%5s|\n", "index", "value")
-	fmt.Printf("+-----+-----+\n")
-	for i, v := range m.failure {
-		fmt.Printf("|%5d|%5d|\n", i, v)
-	}
-	fmt.Printf("+-----+-----+\n")
-}
-
-func (m *Machine) PrintOutput() {
-	fmt.Printf("+-----+----------+\n")
-	fmt.Printf("|%5s|%10s|\n", "index", "value")
-	fmt.Printf("+-----+----------+\n")
-	for i, v := range m.output {
-		var val string
-		for _, o := range v {
-			val = val + " " + string(o)
-		}
-		fmt.Printf("|%5d|%10s|\n", i, val)
-	}
-	fmt.Printf("+-----+----------+\n")
-}
-
-func (m *Machine) g(inState int, input rune) (outState int) {
-	if inState == FAIL_STATE {
-		return ROOT_STATE
-	}
+func (m *Machine) g(inState int, input rune) int {
 
 	t := inState + int(input) + godarts.ROOT_NODE_BASE
+
 	if t >= len(m.trie.Base) {
 		if inState == ROOT_STATE {
 			return ROOT_STATE
@@ -132,26 +119,29 @@ func (m *Machine) setF(inState, outState int) {
 	m.failure[inState] = outState
 }
 
-func (m *Machine) MultiPatternSearch(content string, returnImmediately bool) [](*Term) {
-	terms := make([](*Term), 0)
+func (m *Machine) MultiPatternSearch(content string, returnImmediately bool) []Term {
+	terms := make([]Term, 0, 16)
 
 	state := ROOT_STATE
 	for pos, c := range content {
 	start:
-		if m.g(state, c) == FAIL_STATE {
+		newState := m.g(state, c)
+		if newState == FAIL_STATE {
 			state = m.f(state)
 			goto start
 		} else {
-			state = m.g(state, c)
-			if val, ok := m.output[state]; ok != false {
-				for _, word := range val {
-					term := new(Term)
-					term.Pos = pos + utf8.RuneLen(c) - len(word)
-					term.Word = word
-					terms = append(terms, term)
-					if returnImmediately {
-						return terms
-					}
+			state = newState
+			if state >= len(m.output){
+				continue
+			}
+			for _, word := range m.output[state] {
+				term := Term{
+					Pos: pos + utf8.RuneLen(c) - len(word),
+					Word: word,
+				}
+				terms = append(terms, term)
+				if returnImmediately{
+					return terms
 				}
 			}
 		}

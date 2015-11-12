@@ -56,7 +56,7 @@ func TestMultiPatternSearchEnglish(t *testing.T) {
 	content := "ushers"
 	terms := m.MultiPatternSearch(content, false)
 	for _, term := range terms {
-		fmt.Printf("find %s @%d in %s (%s)\n", term.Word, term.Pos, content, content[term.Pos: term.Pos+len(term.Word)])
+		fmt.Printf("find %s @%d in %s (%s)\n", term.Word, term.Pos, content, content[term.Pos:term.Pos+len(term.Word)])
 	}
 	fmt.Printf("\n")
 }
@@ -75,7 +75,7 @@ func TestMultiPatternSearchChinese(t *testing.T) {
 	content := "你不会想到阿拉伯人会踢出阿根廷风格的足球更何况是埃及风格"
 	terms := m.MultiPatternSearch(content, false)
 	for _, term := range terms {
-		fmt.Printf("find %s @%d in %s (%s)\n", term.Word, term.Pos, content, content[term.Pos: term.Pos+len(term.Word)])
+		fmt.Printf("find %s @%d in %s (%s)\n", term.Word, term.Pos, content, content[term.Pos:term.Pos+len(term.Word)])
 	}
 	fmt.Printf("\n")
 }
